@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KVSRTEWS Notional Increment Arrears Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --paper:#faf6ec;
+    --paper-line:#e4dcc6;
+    --ink:#1e2a3a;
+    --ink-soft:#4a5568;
+    --navy:#1e3a5f;
+    --navy-deep:#12253e;
+    --rust:#a4462c;
+    --rust-soft:#f3e2da;
+    --gold:#a9822f;
+    --ok:#2f6b4f;
+    --ok-bg:#e5f0e8;
+    --card:#ffffff;
+    --border:#ddd4bd;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter',sans-serif; padding:32px 20px 80px;
+    background-image:
+      linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size: 100% 32px;
+  }
+  .wrap{max-width:1040px; margin:0 auto;}
+  header{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    border-bottom:3px double var(--navy); padding-bottom:14px; margin-bottom:28px;
+    flex-wrap:wrap; gap:10px;
+  }
+  header .seal{
+    width:58px; height:58px; border-radius:50%; border:2px solid var(--rust);
+    display:flex; align-items:center; justify-content:center; color:var(--rust);
+    font-family:'Spectral',serif; font-weight:700; font-size:11px; flex-shrink:0;
+    letter-spacing:0.02em; text-align:center;
+  }
+  header h1{
+    font-family:'Spectral',serif; font-weight:700; font-size:26px; margin:0;
+    color:var(--navy-deep); letter-spacing:0.2px;
+  }
+  header .titleblock{display:flex; align-items:center; gap:14px;}
+  header p{margin:2px 0 0; font-size:13px; color:var(--ink-soft);}
+  .badge-note{
+    font-size:12px; color:var(--rust); background:var(--rust-soft);
+    padding:6px 12px; border-radius:3px; border:1px solid #e3c3b2; max-width:340px;
+  }
+  section{
+    background:var(--card); border:1px solid var(--border); border-radius:6px;
+    padding:22px 24px; margin-bottom:22px;
+    box-shadow:0 1px 0 rgba(30,42,58,0.03);
+  }
+  h2{
+    font-family:'Spectral',serif; font-size:17px; font-weight:600; color:var(--navy);
+    margin:0 0 4px; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:#fff;
+    background:var(--navy); width:22px; height:22px; border-radius:3px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .subtext{font-size:12.5px; color:var(--ink-soft); margin:0 0 16px; line-height:1.5;}
+  label{font-size:12px; font-weight:500; color:var(--ink-soft); display:block; margin-bottom:4px;}
+  input, select{
+    width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:4px;
+    font-family:'Inter',sans-serif; font-size:13.5px; background:#fffdf8; color:var(--ink);
+  }
+  input:focus, select:focus{outline:none; border-color:var(--navy); box-shadow:0 0 0 2px rgba(30,58,95,0.12);}
+  .grid-form{display:grid; grid-template-columns:repeat(3,1fr); gap:14px 16px;}
+  .grid-form .full{grid-column:1/-1;}
+  button{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:13px; cursor:pointer;
+    border-radius:4px; border:1px solid var(--navy); background:var(--navy); color:#fff;
+    padding:9px 16px; transition:background .12s;
+  }
+  button:hover{background:var(--navy-deep);}
+  button.secondary{background:#fff; color:var(--navy); border:1px solid var(--navy);}
+  button.secondary:hover{background:#eef2f6;}
+  button.ghost{background:transparent; color:var(--rust); border:1px solid #e3c3b2; padding:6px 10px; font-size:12px;}
+  button.ghost:hover{background:var(--rust-soft);}
+  button.danger{background:#fff; color:var(--rust); border:1px solid #e3c3b2;}
+  button.danger:hover{background:var(--rust-soft);}
+  .row-actions{display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{
+    text-align:left; font-family:'Inter',sans-serif; font-weight:600; font-size:11.5px;
+    text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-soft);
+    border-bottom:1.5px solid var(--navy); padding:8px 8px;
+  }
+  td{padding:7px 8px; border-bottom:1px solid var(--border); font-family:'JetBrains Mono',monospace; font-size:12.5px;}
+  td.name-cell{font-family:'Inter',sans-serif; font-size:13px;}
+  tr:hover td{background:#faf8f2;}
+  .da-table-wrap{max-height:260px; overflow-y:auto; border:1px solid var(--border); border-radius:4px;}
+  .da-table-wrap table{font-size:12.5px;}
+  .da-table-wrap th{position:sticky; top:0; background:#fff; z-index:1;}
+  .rate-input{width:70px; padding:4px 6px; font-size:12.5px; font-family:'JetBrains Mono',monospace;}
+  .date-input{width:120px; padding:4px 6px; font-size:12.5px;}
+  .empty-state{
+    text-align:center; padding:36px 20px; color:var(--ink-soft); font-size:13px;
+  }
+  .pill{
+    display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px;
+    font-family:'Inter',sans-serif; font-weight:600;
+  }
+  .pill.ok{background:var(--ok-bg); color:var(--ok);}
+  footer{text-align:center; font-size:11.5px; color:#9a927a; margin-top:32px; line-height:1.6;}
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--navy-deep); color:#fff; padding:10px 18px; border-radius:6px;
+    font-size:13px; opacity:0; pointer-events:none; transition:all .25s; z-index:50;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .actions-cell{display:flex; gap:6px; white-space:nowrap;}
+  .add-rate-row{display:flex; gap:8px; margin-top:10px; align-items:flex-end;}
+  .add-rate-row > div{flex:1;}
+  .section-head-row{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  .collapsible{display:none; margin-top:14px;}
+  .collapsible.open{display:block;}
+  .result-box{
+    margin-top:18px; padding:16px 18px; border-radius:6px; background:var(--ok-bg);
+    border:1px solid #bfe0cc; display:none;
+  }
+  .result-box.show{display:block;}
+  .result-box .r-title{font-family:'Spectral',serif; font-weight:600; color:var(--ok); font-size:15px; margin:0 0 6px;}
+  .result-box .r-line{font-size:13px; color:var(--ink); margin:2px 0;}
+  @media(max-width:720px){ .grid-form{grid-template-columns:1fr 1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="titleblock">
+      <div class="seal">RTEWS</div>
+      <div>
+        <h1>KVSRTEWS Notional Increment Arrears Calculator</h1>
+        <p>Kendriya Vidyalaya Sangathan Retired Teachers &amp; Employees Welfare Society &mdash; pension revision arrears (reference tool)</p>
+        <p>DA / DR Rates are added upto <b>January 2026</b> from <b>pensionersportal.gov.in</b> &mdash; update the table whenever a new rate is notified.</p>
+      </div>
+    </div> 
+  </header>
+
+  <section>
+    <div class="section-head-row">
+      <div>
+        <h2><span class="num">1</span>Dearness Relief (DR) rate table</h2>
+        <p class="subtext" style="margin-bottom:0;">Sourced from pensionersportal.gov.in, cross-checked with DoPPW memoranda up to Jan 2026. Only needed if you must add or correct a rate.</p>
+      </div>
+      <button class="secondary" id="daToggleBtn" onclick="toggleDaTable()">Show / edit rate table</button>
+    </div>
+    <div class="collapsible" id="daCollapsible">
+      <p class="subtext">The rate applied to a given month is the latest entry effective on or before that month. Edit a value directly if a circular is later amended, or add a new period below.</p>
+      <div class="da-table-wrap">
+        <table>
+          <thead><tr><th style="width:40%">Effective from</th><th style="width:30%">DR rate (%)</th><th style="width:30%"></th></tr></thead>
+          <tbody id="daTableBody"></tbody>
+        </table>
+      </div>
+      <div class="add-rate-row">
+        <div>
+          <label>Effective from</label>
+          <input type="month" id="newDaMonth">
+        </div>
+        <div>
+          <label>DR rate (%)</label>
+          <input type="number" id="newDaRate" step="0.5" placeholder="e.g. 63">
+        </div>
+        <button class="secondary" onclick="addDaRow()">Add rate</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">2</span>Teacher &amp; pension details</h2>
+    <p class="subtext">Enter figures as they appear in the pension revision order. Commutation is the flat monthly rupee amount deducted (not a percentage).</p>
+    <div class="grid-form">
+      <div><label>Name</label><input id="fName" placeholder="Full name"></div>
+      <div><label>Designation</label><input id="fDesig" placeholder="e.g. PGT (Physics)"></div>
+      <div><label>Pension Commutation (Rs./month)</label><input id="fCommute" type="number" step="0.01" placeholder="0"></div>
+      <div><label>Revised Pension Basic &mdash; (New) as per PPO (Rs.)</label><input id="fNew" type="number" step="0.01" placeholder="0"></div>
+      <div><label>Old Pension Basic as per PPO &mdash; (Rs.)</label><input id="fOld" type="number" step="0.01" placeholder="0"></div>
+      <div></div>
+      <div><label>Arrears period &mdash; from</label><input id="fFrom" type="month"></div>
+      <div><label>Arrears period &mdash; to</label><input id="fTo" type="month"></div>
+    </div>
+    <div class="row-actions">
+      <button onclick="generatePdf()">Generate PDF statement</button>
+      <button class="secondary" onclick="clearForm()">Clear form</button>
+    </div>
+    <div class="result-box" id="resultBox">
+      <p class="r-title">Statement generated</p>
+      <p class="r-line" id="resultName"></p>
+      <p class="r-line" id="resultPeriod"></p>
+      <p class="r-line" id="resultTotal"></p>
+    </div>
+  </section>
+
+  <footer>
+    Reference tool only &mdash; verify all figures against the official pension revision order and current DoPPW circulars before use.<br>
+    All data stays in this browser session and is not sent anywhere.
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- DA / DR rate table (7th CPC, Jan 2016 base) ----------
+// Source: pensionersportal.gov.in/DRRATE_7CPC.aspx (verified up to Jul 2024).
+// Jan 2025 / Jul 2025 / Jan 2026 cross-checked against DoPPW office memoranda,
+// since the portal page itself had not been refreshed past Jul 2024 at time of writing.
+let daRates = [
+  {month:"2016-01", rate:0},
+  {month:"2016-07", rate:2},
+  {month:"2017-01", rate:4},
+  {month:"2017-07", rate:5},
+  {month:"2018-01", rate:7},
+  {month:"2018-07", rate:9},
+  {month:"2019-01", rate:12},
+  {month:"2019-07", rate:17},
+  {month:"2021-07", rate:31},
+  {month:"2022-01", rate:34},
+  {month:"2022-07", rate:38},
+  {month:"2023-01", rate:42},
+  {month:"2023-07", rate:46},
+  {month:"2024-01", rate:50},
+  {month:"2024-07", rate:53},
+  {month:"2025-01", rate:55},
+  {month:"2025-07", rate:58},
+  {month:"2026-01", rate:60},
+];
+
+function toggleDaTable(){
+  const el = document.getElementById("daCollapsible");
+  const btn = document.getElementById("daToggleBtn");
+  const open = el.classList.toggle("open");
+  btn.textContent = open ? "Hide rate table" : "Show / edit rate table";
+}
+
+function monthLabel(m){
+  const [y,mm] = m.split("-");
+  const names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return names[parseInt(mm,10)-1] + " " + y;
+}
+
+function renderDaTable(){
+  daRates.sort((a,b)=> a.month.localeCompare(b.month));
+  const body = document.getElementById("daTableBody");
+  body.innerHTML = "";
+  daRates.forEach((r, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="name-cell">${monthLabel(r.month)}</td>
+      <td><input class="rate-input" type="number" step="0.5" value="${r.rate}" onchange="updateDaRate(${idx}, this.value)"></td>
+      <td><button class="ghost" onclick="removeDaRow(${idx})">Remove</button></td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+function updateDaRate(idx, val){
+  daRates[idx].rate = parseFloat(val) || 0;
+}
+
+function removeDaRow(idx){
+  daRates.splice(idx,1);
+  renderDaTable();
+}
+
+function addDaRow(){
+  const month = document.getElementById("newDaMonth").value;
+  const rate = parseFloat(document.getElementById("newDaRate").value);
+  if(!month || isNaN(rate)){ showToast("Enter both a month and a rate."); return; }
+  if(daRates.some(r=>r.month===month)){ showToast("That period already exists — edit it in the table."); return; }
+  daRates.push({month, rate});
+  renderDaTable();
+  document.getElementById("newDaMonth").value = "";
+  document.getElementById("newDaRate").value = "";
+  showToast("Rate added.");
+}
+
+function getRateForMonth(month){
+  let applicable = null;
+  for(const r of daRates){
+    if(r.month <= month) applicable = r;
+    else break;
+  }
+  return applicable ? applicable.rate : 0;
+}
+
+// ---------- month range helper ----------
+function monthsBetween(from, to){
+  const result = [];
+  let [fy, fm] = from.split("-").map(Number);
+  const [ty, tm] = to.split("-").map(Number);
+  while(fy < ty || (fy === ty && fm <= tm)){
+    result.push(`${fy}-${String(fm).padStart(2,"0")}`);
+    fm++;
+    if(fm > 12){ fm = 1; fy++; }
+  }
+  return result;
+}
+
+// ---------- single-teacher generation ----------
+function readForm(){
+  const name = document.getElementById("fName").value.trim();
+  const desig = document.getElementById("fDesig").value.trim();
+  const newP = parseFloat(document.getElementById("fNew").value);
+  const oldP = parseFloat(document.getElementById("fOld").value);
+  const commute = parseFloat(document.getElementById("fCommute").value) || 0;
+  const from = document.getElementById("fFrom").value;
+  const to = document.getElementById("fTo").value;
+
+  if(!name || !desig || isNaN(newP) || isNaN(oldP) || !from || !to){
+    showToast("Please fill in name, designation, both pension amounts, and the period.");
+    return null;
+  }
+  if(from > to){
+    showToast("The 'from' month must be before the 'to' month.");
+    return null;
+  }
+  return {name, desig, newP, oldP, commute, from, to};
+}
+
+function clearForm(){
+  ["fName","fDesig","fCommute","fNew","fOld","fFrom","fTo"].forEach(id=>{
+    document.getElementById(id).value = "";
+  });
+  document.getElementById("resultBox").classList.remove("show");
+}
+
+function computeSchedule(t){
+  const months = monthsBetween(t.from, t.to);
+  let total = 0;
+  const rows = months.map(m=>{
+    const rate = getRateForMonth(m);
+    const due = t.newP + (t.newP * rate/100) - t.commute;
+    const drawn = t.oldP + (t.oldP * rate/100) - t.commute;
+    const arrears = due - drawn;
+    total += arrears;
+    return {month:m, rate, due, drawn, arrears};
+  });
+  return {rows, total};
+}
+
+function fmtRs(n){
+  return n.toLocaleString("en-IN", {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+
+// ---------- PDF generation ----------
+function drawLetterhead(doc, subtitle){
+  const pageWidth = doc.internal.pageSize.getWidth();
+  doc.setFont("times","bold");
+  doc.setFontSize(14);
+  doc.text("KVSRTEWS", pageWidth/2, 40, {align:"center"});
+  doc.setFontSize(8.5);
+  doc.setFont("times","italic");
+  doc.text("Kendriya Vidyalaya Sangathan Retired Teachers & Employees Welfare Society", pageWidth/2, 52, {align:"center"});
+  doc.setFontSize(11);
+  doc.setFont("times","normal");
+  doc.text(subtitle, pageWidth/2, 66, {align:"center"});
+  doc.setDrawColor(30,42,58);
+  doc.line(30, 76, pageWidth-30, 76);
+}
+
+function drawTeacherBlock(doc, t, startY){
+  doc.setFontSize(10);
+  doc.setFont("helvetica","bold"); doc.text("Name:", 30, startY);
+  doc.setFont("helvetica","normal"); doc.text(t.name, 78, startY);
+  doc.setFont("helvetica","bold"); doc.text("Designation:", 320, startY);
+  doc.setFont("helvetica","normal"); doc.text(t.desig, 398, startY);
+  return startY + 18;
+}
+
+function drawRatesBar(doc, t, y){
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const left = 30, right = pageWidth - 30;
+  const segWidth = (right - left) / 3;
+  const labelW = segWidth * 0.6, valueW = segWidth * 0.4;
+  const rowHeight = 30;
+  const segs = [
+    ["REVISED PENSION BASIC (NEW) as per PPO", fmtRs(t.newP)],
+    ["OLD PENSION BASIC as per PPO (OLD)", fmtRs(t.oldP)],
+    ["PENSION COMMUTATION", fmtRs(t.commute)],
+  ];
+  segs.forEach((seg, i)=>{
+    const x = left + i*segWidth;
+    doc.setDrawColor(30,42,58);
+    doc.setLineWidth(0.6);
+    doc.setFillColor(255,255,255);
+    doc.rect(x, y, labelW, rowHeight, "FD");
+    doc.setFillColor(255,242,0);
+    doc.rect(x+labelW, y, valueW, rowHeight, "FD");
+    doc.setTextColor(20,20,20);
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(6.8);
+    const lines = doc.splitTextToSize(seg[0], labelW - 8);
+    const lineStart = y + rowHeight/2 - (lines.length-1)*4 + 2;
+    lines.forEach((line, li)=> doc.text(line, x+4, lineStart + li*8));
+    doc.setFontSize(9.5);
+    doc.text(seg[1], x+labelW+valueW/2, y+rowHeight/2+3, {align:"center"});
+  });
+  doc.setTextColor(0,0,0);
+  return y + rowHeight;
+}
+
+const PDF_HEADER_TOP = 170;
+
+function drawFootnote(doc, y, extra){
+  doc.setFontSize(8.5);
+  doc.setTextColor(128,0,0); 
+  doc.setFont("helvetica","normal");
+  doc.text("Prepared By:",30,y+28);
+  let w1=doc.getTextWidth("Prepared by: ");
+  doc.setFont("helvetica","bolditalic"); 
+  doc.text("Srinivasulu Doranala",30+w1,y+28); 
+  let w2=doc.getTextWidth("Srinivasulu Doranala"); 
+  doc.setFont("helvetica","normal"); 
+  doc.text(", Retd PGT Physics KV Gachibowli (Hyderabad)",30+w1+w2,y+28);
+}
+
+function drawTotalsRow(doc, y, label, value, highlight){
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const left = 30, right = pageWidth - 30;
+  const valueW = 120;
+  const labelW = (right - left) - valueW;
+  const h = 22;
+  doc.setDrawColor(30,42,58);
+  doc.setLineWidth(0.6);
+  if(highlight) doc.setFillColor(243,226,218); else doc.setFillColor(250,246,236);
+  doc.rect(left, y, labelW, h, "FD");
+  doc.rect(left+labelW, y, valueW, h, "FD");
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(highlight ? 10.5 : 9);
+  doc.setTextColor(30,42,58);
+  doc.text(label, left+labelW-8, y+h/2+3.5, {align:"right"});
+  doc.text(value, left+labelW+valueW/2, y+h/2+3.5, {align:"center"});
+  doc.setTextColor(0,0,0);
+  return y + h;
+}
+
+function buildPdf(t){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:"pt", format:"a4", orientation:"landscape"});
+  const { rows, total } = computeSchedule(t);
+
+  const drawPageHeader = ()=>{
+    drawLetterhead(doc, "Statement of Notional Increment Arrears (Reference)");
+    const y = drawTeacherBlock(doc, t, 96);
+    drawRatesBar(doc, t, y + 4);
+  };
+
+  const body = rows.map((r, idx)=>{
+    const dueDr = t.newP * r.rate / 100;
+    const drawnDr = t.oldP * r.rate / 100;
+    const grossDue = t.newP + dueDr;
+    const grossDrawn = t.oldP + drawnDr;
+    return [
+      idx+1,
+      monthLabel(r.month),
+      r.rate.toFixed(1)+"%",
+      fmtRs(t.newP), fmtRs(dueDr), fmtRs(grossDue), fmtRs(t.commute), fmtRs(r.due),
+      fmtRs(t.oldP), fmtRs(drawnDr), fmtRs(grossDrawn), fmtRs(t.commute), fmtRs(r.drawn),
+      fmtRs(r.arrears),
+    ];
+  });
+
+  const labelStyle = {fillColor:255, textColor:[30,58,95], fontStyle:"bold", halign:"center", lineColor:[30,58,95], lineWidth:0.6};
+  const groupStyle = {fillColor:255, textColor:[190,30,30], fontStyle:"bold", fontSize:12, halign:"center", lineColor:[30,58,95], lineWidth:0.6};
+
+  const pageRowIndices = {};   // pageNumber -> [row indices shown on that page]
+
+  doc.autoTable({
+    startY: PDF_HEADER_TOP,
+    margin: {left:30, right:30, top:PDF_HEADER_TOP, bottom:110},
+    head: [
+      [
+        {content:"S.No", rowSpan:2, styles:labelStyle},
+        {content:"Month &\nYear", rowSpan:2, styles:labelStyle},
+        {content:"DA %", rowSpan:2, styles:labelStyle},
+        {content:"Due", colSpan:5, styles:groupStyle},
+        {content:"Drawn", colSpan:5, styles:groupStyle},
+        {content:`Month wise Arrears\nfrom ${monthLabel(t.from)}\nto ${monthLabel(t.to)}`, rowSpan:2, styles:labelStyle},
+      ],
+      [
+        {content:"Basic", styles:labelStyle}, {content:"DA", styles:labelStyle}, {content:"Total", styles:labelStyle},
+        {content:"Pension\nCommutation", styles:labelStyle}, {content:"NET", styles:labelStyle},
+        {content:"Basic", styles:labelStyle}, {content:"DA", styles:labelStyle}, {content:"Total", styles:labelStyle},
+        {content:"Pension\nCommutation", styles:labelStyle}, {content:"NET", styles:labelStyle},
+      ]
+    ],
+    body: body,
+    styles:{font:"helvetica", fontSize:7.5, cellPadding:3.5, halign:"right", lineColor:[210,200,175], lineWidth:0.4},
+    columnStyles:{0:{halign:"center", cellWidth:26}, 1:{halign:"left", cellWidth:52}, 2:{halign:"center", cellWidth:34}},
+    alternateRowStyles:{fillColor:[250,246,236]},
+    didDrawPage: drawPageHeader,
+    willDrawCell: (data)=>{
+      if(data.section === "body" && data.column.index === 0){
+        const pg = data.pageNumber;
+        if(!pageRowIndices[pg]) pageRowIndices[pg] = [];
+        pageRowIndices[pg].push(data.row.index);
+      }
+    },
+  });
+
+  // Draw a page subtotal on every page, and the grand total additionally on the last page.
+  const pageNums = Object.keys(pageRowIndices).map(Number).sort((a,b)=>a-b);
+
+  pageNums.forEach((pg, i)=>{
+    doc.setPage(pg);
+    const rowIdxs = pageRowIndices[pg];
+    const pageSubtotal = rowIdxs.reduce((s,ri)=> s + rows[ri].arrears, 0);
+    // Position just below the table on this page: bottom margin reserved (110pt), so place near pageHeight - 95
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let y = pageHeight - 108;
+    y = drawTotalsRow(doc, y, `Total arrears on this page (rows ${rowIdxs[0]+1}\u2013${rowIdxs[rowIdxs.length-1]+1})`, fmtRs(pageSubtotal), false);
+
+    const isLast = (pg === pageNums[pageNums.length-1]);
+    if(isLast){
+      y = drawTotalsRow(doc, y + 4, "TOTAL ARREARS FOR THE FULL PERIOD", fmtRs(total), true);
+      drawFootnote(doc, y + 14, "Due = Basic (New) + DA% of Basic (New) - Pension Commutation.  Drawn = Basic (Old) + DA% of Basic (Old) - Pension Commutation.  Arrears = Due - Drawn.");
+    }
+  });
+
+  return doc;
+}
+
+function generatePdf(){
+  const t = readForm();
+  if(!t) return;
+  const doc = buildPdf(t);
+  const safeName = t.name.replace(/[^a-z0-9]+/gi,"_");
+  doc.save(`Notianal_Increment_Arrears_${safeName}.pdf`);
+
+  const {total} = computeSchedule(t);
+  document.getElementById("resultName").textContent = `${t.name} \u2014 ${t.desig}`;
+  document.getElementById("resultPeriod").textContent = `Period: ${monthLabel(t.from)} to ${monthLabel(t.to)}`;
+  document.getElementById("resultTotal").textContent = `Total arrears: ${fmtRs(total)}`;
+  document.getElementById("resultBox").classList.add("show");
+  showToast("PDF generated.");
+}
+
+// ---------- toast ----------
+let toastTimer;
+function showToast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove("show"), 2600);
+}
+
+renderDaTable();
+</script>
+</body>
+</html>
